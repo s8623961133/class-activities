@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>假日真好玩 - 互動配對遊戲</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    background-color: #FFF9E6;
+    font-family: '微軟正黑體', '標楷體', sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    touch-action: none; /* 防止平板預設的滑動與縮放 */
+  }
+  .header {
+    background-color: #FFB74D;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    padding: 15px 40px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    width: 95%;
+    max-width: 900px;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    gap: 30px;
+  }
+  .reading-text {
+    font-size: 28px;
+    line-height: 2.2;
+    color: #333;
+    font-weight: bold;
+  }
+  .sentence {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .drop-zone {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 140px;
+    height: 55px;
+    border: 4px dashed #B0BEC5;
+    border-radius: 12px;
+    margin: 0 10px;
+    background-color: #F5F7FA;
+    transition: all 0.3s;
+    vertical-align: middle;
+  }
+  .drop-zone.active {
+    border-color: #4FC3F7;
+    background-color: #E1F5FE;
+  }
+  .word-bank {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    background-color: #FFF3E0;
+    border: 4px solid #FFD54F;
+    border-radius: 16px;
+    min-height: 100px;
+  }
+  .draggable-word {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: white;
+    border: 3px solid #D32F2F;
+    color: #D32F2F;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 4px 0 #B71C1C;
+    touch-action: none;
+    z-index: 10;
+  }
+  .draggable-word:active {
+    cursor: grabbing;
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #B71C1C;
+  }
+  /* 過關彈出視窗 */
+  #overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .success-modal {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 6px solid #4CAF50;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .success-modal h1 {
+    color: #4CAF50;
+    font-size: 42px;
+    margin: 10px 0;
+  }
+  .success-modal .emoji { font-size: 80px; }
+  .btn-restart {
+    background-color: #4FC3F7;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 4px 0 #0288D1;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">🌟 假日真好玩！ 填空挑戰</div>
+
+<div class="game-container">
+  <!-- 課文區 -->
+  <div class="reading-text">
+    <div class="sentence">放假的時候，大家一起做好玩的事。</div>
+    <div class="sentence">我愛拍拍 <span class="drop-zone" data-answer="籃球"></span> ，和同學一起流汗。</div>
+    <div class="sentence">我愛大聲 <span class="drop-zone" data-answer="唱歌"></span> ，唱出好聽的歌聲。</div>
+    <div class="sentence">我愛拿筆 <span class="drop-zone" data-answer="畫畫"></span> ，畫出美麗的 <span class="drop-zone" data-answer="花朵"></span> 。</div>
+    <div class="sentence">我愛騎 <span class="drop-zone" data-answer="腳踏車"></span> ，吹著涼涼的微 <span class="drop-zone" data-answer="風"></span> 。</div>
+    <div class="sentence">休閒活動真有趣，天天都有好心情！</div>
+  </div>
+
+  <!-- 語詞庫 -->
+  <div class="word-bank" id="word-bank">
+    <div class="draggable-word" data-word="花朵">🌸 花朵</div>
+    <div class="draggable-word" data-word="唱歌">🎤 唱歌</div>
+    <div class="draggable-word" data-word="風">🌬️ 風</div>
+    <div class="draggable-word" data-word="籃球">🏀 籃球</div>
+    <div class="draggable-word" data-word="腳踏車">🚲 腳踏車</div>
+    <div class="draggable-word" data-word="畫畫">🎨 畫畫</div>
+  </div>
+</div>
+
+<!-- 過關提示 -->
+<div id="overlay">
+  <div class="success-modal">
+    <div class="emoji">🎉</div>
+    <h1>太棒了！全部答對！</h1>
+    <button class="btn-restart" onclick="location.reload()">再玩一次</button>
+  </div>
+</div>
+
+<script>
+  const draggables = document.querySelectorAll('.draggable-word');
+  const dropZones = document.querySelectorAll('.drop-zone');
+  let activeItem = null;
+  let offsetX = 0, offsetY = 0;
+  let correctCount = 0;
+  const totalWords = dropZones.length;
+
+  draggables.forEach(item => {
+    item.addEventListener('pointerdown', e => {
+      activeItem = item;
+      const rect = item.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      
+      // 設定拖曳時的樣式與絕對位置
+      item.style.position = 'fixed';
+      item.style.left = rect.left + 'px';
+      item.style.top = rect.top + 'px';
+      item.style.margin = '0';
+      item.style.zIndex = '1000';
+      
+      // 擷取指標事件，讓滑動更順暢
+      item.setPointerCapture(e.pointerId);
+      
+      // 突顯所有的目標框
+      dropZones.forEach(z => { if(!z.hasChildNodes()) z.classList.add('active'); });
+    });
+
+    item.addEventListener('pointermove', e => {
+      if (!activeItem || activeItem !== item) return;
+      item.style.left = (e.clientX - offsetX) + 'px';
+      item.style.top = (e.clientY - offsetY) + 'px';
+    });
+
+    item.addEventListener('pointerup', e => {
+      if (!activeItem || activeItem !== item) return;
+      item.releasePointerCapture(e.pointerId);
+      dropZones.forEach(z => z.classList.remove('active'));
+
+      let matched = false;
+      const itemRect = item.getBoundingClientRect();
+      const itemCenterX = itemRect.left + itemRect.width / 2;
+      const itemCenterY = itemRect.top + itemRect.height / 2;
+
+      // 檢查是否拖曳到正確的框框內
+      dropZones.forEach(zone => {
+        const zoneRect = zone.getBoundingClientRect();
+        if (itemCenterX > zoneRect.left && itemCenterX < zoneRect.right &&
+            itemCenterY > zoneRect.top && itemCenterY < zoneRect.bottom) {
+          
+          if (zone.dataset.answer === item.dataset.word && !zone.hasChildNodes()) {
+            // 配對成功！
+            item.style.position = 'static';
+            item.style.boxShadow = 'none';
+            item.style.border = 'none';
+            item.style.transform = 'none';
+            item.style.pointerEvents = 'none'; // 鎖定不可再拖
+            zone.appendChild(item);
+            zone.style.border = '4px solid #4CAF50';
+            zone.style.backgroundColor = '#E8F5E9';
+            matched = true;
+            correctCount++;
+            
+            // 檢查是否全部完成
+            if (correctCount === totalWords) {
+              setTimeout(() => {
+                document.getElementById('overlay').style.display = 'flex';
+              }, 300);
+            }
+          }
+        }
+      });
+
+      // 如果沒有配對成功，彈回原處
+      if (!matched) {
+        item.style.position = 'static';
+        document.getElementById('word-bank').appendChild(item);
+      }
+      activeItem = null;
+    });
+  });
+</script>
+</body>
+</html>
